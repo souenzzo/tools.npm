@@ -11,12 +11,14 @@
 (set! *warn-on-reflection* true)
 
 (defn install
-  [{:keys [package-lock]}]
-  (let [{:strs [packages]} (json/read (io/reader package-lock))
+  [{:keys [path]
+    :or   {path "."}}]
+  (let [base (io/file path)
+        {:strs [packages]} (json/read (io/reader (io/file base "package-lock.json")))
         packages (remove #(get % "dev")
                    (dissoc packages ""))]
     (doseq [[target {:strs [resolved integrity] :as pkg}] packages
-            :let [targetf (io/file target)
+            :let [targetf (io/file base target)
                   [alg target-b64-digest] (string/split integrity #"-" 2)
                   md (MessageDigest/getInstance alg)
                   in (DigestInputStream. (io/input-stream resolved) md)
@@ -36,6 +38,6 @@
           (b/delete {:path (str targetf)})
           (throw (ex-info (str "Dependency " resolved " do not match integrity")
                    {:cognitect.anomalies/category :cognitect.anomalies/unavailable
-                    :expected                     integrity
-                    :actual                       integrity
+                    :expected                     target-b64-digest
+                    :actual                       dig
                     :pkg                          pkg})))))))
