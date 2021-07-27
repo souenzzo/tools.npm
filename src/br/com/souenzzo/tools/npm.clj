@@ -20,7 +20,7 @@
     (doseq [[target {:strs [resolved integrity] :as pkg}] packages
             :let [targetf (io/file base target)
                   [alg target-b64-digest] (string/split integrity #"-" 2)
-                  md (MessageDigest/getInstance alg)
+                  md (MessageDigest/getInstance ({"sha512" "SHA-512"} alg alg))
                   in (DigestInputStream. (io/input-stream resolved) md)
                   tar (.createArchiveInputStream (ArchiveStreamFactory.) "tar"
                         (GZIPInputStream. in))]]
